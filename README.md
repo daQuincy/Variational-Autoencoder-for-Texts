@@ -8,7 +8,7 @@ The dataset is preprocessed as follows:
 1. Characters are all lower-cased.
 1. No words are removed, common punctuations (comma, period, question mark) are preserved and treated as a word.
 1. Dataset is split into training and testing set.
-1. Only the top 20000 most frequent words in the training set are stored in vocabulary, other words are replaced with a "<unk>" token.  
+1. Only the top 20000 most frequent words in the training set are stored in vocabulary, other words are replaced with an _unknown_ token.  
 1. The training set, testing set and Keras word Tokenizer are saved as pickle files.  
 
 Example of preprocessed sentence:  
