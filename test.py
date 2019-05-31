@@ -18,7 +18,7 @@ ap.add_argument("-s", "--sentence", type=str)
 ap.add_argument("-s1", "--sentence_1", type=str)
 ap.add_argument("-s2", "--sentence_2", type=str)
 ap.add_argument("-b", "--beam_size", default=1, type=int)
-ap.add_argument("-r", "--restore_path", default="vae/vae-20", type=str)
+ap.add_argument("-r", "--restore_path", default="vae/vae-25", type=str)
 args = ap.parse_args()
 
 def preprocess_sentence(s):

@@ -12,7 +12,7 @@ import numpy as np
 class SeqVAE:
     def __init__(self, n_vocab, embedding_path=None,
                  rnn_units=512, embedding_size=300, latent_size=128,
-                 anneal_steps=5000, beam_width=3,
+                 anneal_steps=1000, beam_width=3,
                  training=False):
         self.n_vocab = n_vocab
         
@@ -34,8 +34,8 @@ class SeqVAE:
                                               name="embedings")
             
         if self.training:
-            self.dropout = 0.6
-            self.word_dropout = 0.8
+            self.dropout = 1.0
+            self.word_dropout = 1.0
         else:
             self.dropout = 1.0
             self.word_dropout = 1.0
@@ -129,9 +129,13 @@ class SeqVAE:
         beta = tf.minimum(tf.cast(1.0 - k / (k + tf.exp(self.step / k)), tf.float32), 1.0)
         kl_loss_ = 0.5 * tf.reduce_sum(tf.square(z_mean) + tf.square(z_sigma) - tf.log(tf.square(z_sigma)+1e-8) - 1, axis=-1)
         self.kl_loss_ = tf.reduce_mean(kl_loss_ / self.latent_size)
-        kl_loss = beta * self.kl_loss_
+        kl_loss = self.kl_loss_ * beta
         
-        self.loss = reconstruction_loss + kl_loss
+        z_mean_mu = tf.reduce_mean(z_mean, 0)
+        z_mean_mu = tf.tile(tf.expand_dims(z_mean_mu, 0), [tf.shape(self.z)[0], 1])
+        mu_loss = tf.nn.relu(5.0 - tf.losses.mean_squared_error(z_mean_mu, z_mean))
+        
+        self.loss = reconstruction_loss + kl_loss + mu_loss
         self.accuracy = tf.contrib.metrics.accuracy(tf.argmax(labels, -1, output_type=tf.int32), train_output, weights=mask)
         
         learning_rate = tf.train.exponential_decay(1e-3, self.step, 5000, 0.96)
@@ -148,10 +152,11 @@ class SeqVAE:
             summaries += [tf.summary.scalar("reconstruction_loss", reconstruction_loss),
                           tf.summary.scalar("kl_loss", self.kl_loss_),
                           tf.summary.scalar("loss", self.loss),
+                          tf.summary.scalar("mu_loss", mu_loss),
                           tf.summary.scalar("accuracy", self.accuracy)]
         with tf.variable_scope("misc"):
-            summaries += [tf.summary.scalar("beta", beta)]
-                          #tf.summary.scalar("learning_rate", learning_rate)]
+            summaries += [tf.summary.scalar("beta", beta),
+                          tf.summary.scalar("learning_rate", learning_rate)]
         
         self.summ_op = tf.summary.merge(summaries)
         self.saver = tf.train.Saver()
